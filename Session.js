@@ -62,7 +62,7 @@ return{
         this.listenTo(owner, 'reset', uncache)
         this.listenTo(owner, 'change', changed)
 
-        this.listenTo(Backbone, 'networkErr', onNetworkError)
+        this.listenTo(Backbone, 'network.error', onNetworkError)
 
         if(cached){
             try{ owner.add(JSON.parse(cached)) }
