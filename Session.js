@@ -19,7 +19,7 @@ cache = function(model, coll){
     brief=this.deps.owner.at(0)
 
     if (user) {
-        this.addUser(model.id, users, function(){}) // update in bg
+        this.addUser(model.id, users, function(){}) // value might be outdated, update it at bg
         return userReady(null, user, this)
     }
     this.addUser(model.id, users, userReady)
@@ -73,8 +73,9 @@ return{
     },
     // welcome to override with mixin
     addUser: function(userId, users, cb){
+		if (!userId) return
         var self=this
-        users.read({}, function(err, model, raw){
+        users.read({}, function(err, model, res){
             cb(err, model, self)
         })
     },
