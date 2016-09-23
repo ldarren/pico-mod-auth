@@ -10,7 +10,7 @@ changed=function(model){
 cache = function(model, coll){
     changed.call(this, model)
 
-    this.signals.signin(model).sendNow()
+    this.signals.signin(model).send()
 	this.userReadied = false
 
     var
@@ -33,7 +33,7 @@ userReady = function(err, user, ctx){
     if (err) return console.error(err)
     if (!user) return console.error('user not found')
 
-    if (!ctx.userReadied || brief.hasChanged(['id'])) ctx.signals.userReady(user).sendNow()
+    if (!ctx.userReadied || brief.hasChanged(['id'])) ctx.signals.userReady(user).send()
 	ctx.userReadied= true
     if (!ctx.modelReadied)ctx.signals.modelReady().send()
     ctx.modelReadied= true
@@ -49,8 +49,9 @@ onNetworkError= function(err){
 return{
     signals: ['signin', 'signout', 'modelReady', 'userReady'],
     deps: {
-        owner:'ref',
-        users: 'ref'
+		owner:'models',
+		users:'models',
+		forceAuth:['bool',1]
     },
     create: function(deps){
         var
@@ -65,11 +66,11 @@ return{
         this.listenTo(Backbone, 'network.error', onNetworkError)
 
         if(cached){
-            try{ owner.add(JSON.parse(cached)) }
+            try{ return owner.add(JSON.parse(cached)) }
             catch(exp){ console.error(exp) }
-        }else{
-            this.signals.signout().send()
         }
+		if (deps.forceAuth) this.signals.signout().send()
+        else this.signals.modelReady().send()
     },
     // welcome to override with mixin
     addUser: function(userId, users, cb){
