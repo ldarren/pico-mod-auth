@@ -54,6 +54,8 @@ return{
 		forceAuth:['bool',1]
     },
     create: function(deps){
+		network.addon(this.credential({})) // credential can be mixed
+
         var
         owner = deps.owner,
         cached = storage.getItem('owner')
