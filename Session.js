@@ -11,6 +11,7 @@ cache = function(model, coll){
     changed.call(this, model)
 
     this.signals.signin(model).send()
+	if (!model.id) return startApp(this) // signed in but not a valid user, pending verification
 	this.userReadied = false
 
     var
@@ -26,24 +27,30 @@ cache = function(model, coll){
 },
 uncache = function(){
     storage.removeItem('owner')
-    network.addon([]) 
-    this.signals.signout().send()
+	network.addon(this.credential({})) // credential can be mixed
+	if (this.deps.forceAuth) this.signals.signout().send()
+	else startApp(this)
 },      
-userReady = function(err, user, ctx){
+userReady = function(err, user, self){
     if (err) return console.error(err)
     if (!user) return console.error('user not found')
 
-    if (!ctx.userReadied || brief.hasChanged(['id'])) ctx.signals.userReady(user).send()
-	ctx.userReadied= true
-    if (!ctx.modelReadied)ctx.signals.modelReady().send()
-    ctx.modelReadied= true
+    if (!self.userReadied || brief.hasChanged(['id'])) self.signals.userReady(user).send()
+	self.userReadied= true
+	startApp(self)
     // always home page after login? Router.home(true)
 },
+/*
+ * 1. user has no session and forceAuth is false
+ * 2. user has logout, it might b4 user ready
+ * 3. owner has added but userId is 0
+ */
+startApp=function(self){
+    if (!self.modelReadied)self.signals.modelReady().send()
+    self.modelReadied= true
+},
 onNetworkError= function(err){
-	if (403 === err.code){
-		this.signals.modelReady().sendNow() // router may not initialized
-		this.deps.owner.reset()
-	}
+	if (403 === err.code) this.deps.owner.reset()
 }
 
 return{
@@ -54,8 +61,6 @@ return{
 		forceAuth:['bool',1]
     },
     create: function(deps){
-		network.addon(this.credential({})) // credential can be mixed
-
         var
         owner = deps.owner,
         cached = storage.getItem('owner')
@@ -71,8 +76,7 @@ return{
             try{ return owner.add(JSON.parse(cached)) }
             catch(exp){ console.error(exp) }
         }
-		if (deps.forceAuth) this.signals.signout().send()
-        else this.signals.modelReady().send()
+		uncache.call(this)
     },
     // welcome to override with mixin
     addUser: function(userId, users, cb){
