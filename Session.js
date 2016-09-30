@@ -1,7 +1,7 @@
 var
 Router = require('js/Router'),
 network = require('js/network'),
-storage = window.localStorage,
+storage = __.storage,
 changed=function(model){
     var cred = this.credential(model.attributes)
     network.addon(cred) 
@@ -62,21 +62,25 @@ return{
     },
     create: function(deps){
         var
-        owner = deps.owner,
-        cached = storage.getItem('owner')
+		self=this,
+        owner = deps.owner
 
-        owner.reset()
-        this.listenTo(owner, 'add', cache)
-        this.listenTo(owner, 'reset', uncache)
-        this.listenTo(owner, 'change', changed)
+		owner.reset()
+		this.listenTo(owner, 'add', cache)
+		this.listenTo(owner, 'reset', uncache)
+		this.listenTo(owner, 'change', changed)
 
-        this.listenTo(Backbone, 'network.error', onNetworkError)
+		this.listenTo(Backbone, 'network.error', onNetworkError)
 
-        if(cached){
-            try{ return owner.add(JSON.parse(cached)) }
-            catch(exp){ console.error(exp) }
-        }
-		uncache.call(this)
+        storage.getItem('owner',function(err,cached){
+			if (err) return console.error(err)
+
+			if(cached){
+				try{ return owner.add(JSON.parse(cached)) }
+				catch(exp){ console.error(exp) }
+			}
+			uncache.call(self)
+		})
     },
     // welcome to override with mixin
     addUser: function(userId, users, cb){

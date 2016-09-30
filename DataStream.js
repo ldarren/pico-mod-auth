@@ -1,5 +1,5 @@
 var
-storage = window.localStorage,
+storage=__.storage,
 merge1={merge:true},
 addRemove = function(coll, list){
     if (!coll || !list || !list.length) return false
@@ -7,6 +7,15 @@ addRemove = function(coll, list){
     return true
 },
 writeData = function(model){ writeColl(this,model.collection.name, this.me.id) },
+sseCB=function(raw){
+	var userId = this.me.id
+	if (!userId) return
+	writeSeen(this, userId, raw.seen)
+	var models=this.deps.models
+	for(var i=0,keys=Object.keys(raw),k; k=keys[i]; i++){
+		addRemove(models[k],raw[k])
+	}
+},
 reconn=function(count){
     this.retry(count)
     if (!this.me) return
@@ -15,8 +24,8 @@ reconn=function(count){
     this.stopListening(push)
     this.listenTo(push, 'closed', reconn) // when server side shutdown connect
     this.listenTo(push, 'connecting', this.retry)// when client cant react server
-    for(var i=0,evts=this.sseEvts,cbs=this.sseCBs,e; e=evts[i]; i++){
-        this.listenTo(push, e, cbs[i])
+    for(var i=0,evts=this.deps.push.events,e; e=evts[i]; i++){
+        this.listenTo(push, e, sseCB)
     }
 },
 sortDesc = function(m1, m2){
@@ -28,9 +37,11 @@ sortAsc = function(m1, m2){
     return s1 < s2 ? -1 : s1 > s2 ? 1 : 0;
 },
 readSeen= function(self,userId){
-    var seen=storage.getItem('seen'+userId)
-    try{self.seen=JSON.parse(seen)||0}
-    catch(e){self.seen=0}
+    storage.getItem('seen'+userId,function(err,seen){
+		if(err) return console.error(err)
+		try{self.seen=JSON.parse(seen)||0}
+		catch(e){self.seen=0}
+	})
 },
 writeSeen= function(self,userId, seen){
     storage.setItem('seen'+userId, self.seen = seen)
@@ -40,9 +51,13 @@ removeSeen= function(self,userId){
 },
 readColl= function(self,name, userId){
     var coll = self.deps.models[name]
-    if (!userId || !coll) return
-    try{ coll.add(JSON.parse(storage.getItem(name+userId))) }
-    catch(exp){ return console.error(exp) }
+    if (!userId || !coll) returna
+	storage.getItem(name+userId,function(err,json){
+		if(err) return console.error(err)
+		if(!json) return
+		try{ coll.add(JSON.parse(json)) }
+		catch(exp){ return console.error(exp) }
+	})
 },
 writeColl= function(self,name, userId){
     var coll = self.deps.models[name]
@@ -118,16 +133,6 @@ return{
 		}
     },
 
-    sseEvts:['poll'],
-    sseCBs:[function(raw){
-        var userId = this.me.id
-        if (!userId) return
-        writeSeen(this, userId, raw.seen)
-        var models=this.deps.models
-        for(var i=0,keys=Object.keys(raw),k; k=keys[i]; i++){
-            addRemove(models[k],raw[k])
-        }
-    }],
     addSSEEvents: function(){
     },
     connect: function(stream, model, seen, count){
