@@ -83,7 +83,7 @@ return{
 
     slots:{
         signin: function(from, sender, model){
-            if(this.me)this.slots.signout.call(this)
+            if(this.me && this.me.id)this.slots.signout.call(this)
             var userId = model.id
 
             this.me=model 
