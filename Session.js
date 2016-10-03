@@ -4,7 +4,7 @@ network = require('js/network'),
 storage = __.storage,
 changed=function(model){
     var cred = this.credential(model.attributes)
-    network.addon(cred) 
+    network.credential(cred) 
     storage.setItem('owner', JSON.stringify(cred))
 },
 cache = function(model, coll){
@@ -27,7 +27,7 @@ cache = function(model, coll){
 },
 uncache = function(){
     storage.removeItem('owner')
-	network.addon(this.credential({})) // credential can be mixed
+	network.credential(this.credential({})) // credential can be mixed
 	if (this.deps.forceAuth) this.signals.signout().send()
 	else startApp(this)
 },      
@@ -86,7 +86,7 @@ return{
     addUser: function(userId, users, cb){
 		if (!userId) return
         var self=this
-        users.read({}, function(err, model, res){
+        users.read({id:userId}, function(err, model, res){
             cb(err, model, self)
         })
     },

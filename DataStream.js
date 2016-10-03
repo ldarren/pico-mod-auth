@@ -51,7 +51,7 @@ removeSeen= function(self,userId){
 },
 readColl= function(self,name, userId){
     var coll = self.deps.models[name]
-    if (!userId || !coll) returna
+    if (!userId || !coll) return
 	storage.getItem(name+userId,function(err,json){
 		if(err) return console.error(err)
 		if(!json) return
