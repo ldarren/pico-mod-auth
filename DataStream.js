@@ -1,5 +1,5 @@
 var
-storage=__.storage,
+store=__.store,
 merge1={merge:true},
 addRemove = function(coll, list){
     if (!coll || !list || !list.length) return false
@@ -37,22 +37,22 @@ sortAsc = function(m1, m2){
     return s1 < s2 ? -1 : s1 > s2 ? 1 : 0;
 },
 readSeen= function(self,userId){
-    storage.getItem('seen'+userId,function(err,seen){
+    store.getItem('seen'+userId,function(err,seen){
 		if(err) return console.error(err)
 		try{self.seen=JSON.parse(seen)||0}
 		catch(e){self.seen=0}
 	})
 },
 writeSeen= function(self,userId, seen){
-    storage.setItem('seen'+userId, self.seen = seen)
+    store.setItem('seen'+userId, self.seen = seen)
 },
 removeSeen= function(self,userId){
-    storage.removeItem('seen'+userId)
+    store.removeItem('seen'+userId)
 },
 readColl= function(self,name, userId){
     var coll = self.deps.models[name]
     if (!userId || !coll) return
-	storage.getItem(name+userId,function(err,json){
+	store.getItem(name+userId,function(err,json){
 		if(err) return console.error(err)
 		if(!json) return
 		try{ coll.add(JSON.parse(json)) }
@@ -62,10 +62,10 @@ readColl= function(self,name, userId){
 writeColl= function(self,name, userId){
     var coll = self.deps.models[name]
     if (!userId || !coll || !coll.length) return
-    storage.setItem(name+userId, JSON.stringify(coll.toJSON()))
+    store.setItem(name+userId, JSON.stringify(coll.toJSON()))
 },
 removeColl= function(self,name, userId){
-    storage.removeItem(name+userId)
+    store.removeItem(name+userId)
 }
 
 return{
@@ -108,7 +108,7 @@ return{
             for(var i=0,models=this.deps.models,keys=Object.keys(models),k; k=keys[i]; i++){
                 models[k].reset()
             }
-			storage.clear()
+			store.clear()
 
             this.seen = 0
             this.me= null

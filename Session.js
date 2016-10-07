@@ -1,11 +1,11 @@
 var
 Router = require('js/Router'),
 network = require('js/network'),
-storage = __.storage,
+store = __.store,
 changed=function(model){
     var cred = this.credential(model.attributes)
     network.credential(cred) 
-    storage.setItem('credential', JSON.stringify(cred))
+    store.setItem('credential', JSON.stringify(cred))
 },
 cache = function(model, coll){
     changed.call(this, model)
@@ -25,7 +25,7 @@ cache = function(model, coll){
     this.addUser(model.id, users, userReady)
 },
 uncache = function(){
-    storage.removeItem('credential')
+    store.removeItem('credential')
 	network.credential(this.credential({})) // credential can be mixed
 	if (this.deps.forceAuth) this.signals.signout().send()
 	else startApp(this)
@@ -71,7 +71,7 @@ return{
 
 		this.listenTo(Backbone, 'network.error', onNetworkError)
 
-        storage.getItem('credential',function(err,cached){
+        store.getItem('credential',function(err,cached){
 			if (err) return console.error(err)
 
 			if(cached){
