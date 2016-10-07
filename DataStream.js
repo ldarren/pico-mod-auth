@@ -1,5 +1,5 @@
 var
-store=__.store,
+store=__.store(),
 merge1={merge:true},
 addRemove = function(coll, list){
     if (!coll || !list || !list.length) return false

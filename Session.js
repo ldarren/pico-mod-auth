@@ -1,7 +1,7 @@
 var
 Router = require('js/Router'),
 network = require('js/network'),
-store = __.store,
+store = __.store(),
 changed=function(model){
     var cred = this.credential(model.attributes)
     network.credential(cred) 
