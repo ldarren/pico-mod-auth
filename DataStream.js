@@ -1,12 +1,13 @@
 var
 store=__.store(),
 merge1={merge:true},
+dummyCB=function(err){if(err)return console.error(err)},
 addRemove = function(coll, list){
     if (!coll || !list || !list.length) return false
     coll.add(list, merge1)
     return true
 },
-writeData = function(model){ writeColl(this,model.collection.name, this.me.id) },
+writeData = function(model){ writeColl(this, model.collection.name, this.me.id) },
 sseCB=function(raw){
 	var userId = this.me.id
 	if (!userId) return
@@ -17,8 +18,7 @@ sseCB=function(raw){
 	}
 },
 reconn=function(count){
-    this.retry(count)
-    if (!this.me) return
+    if (!this.retry(count||0) || !this.me) return
     var push=this.deps.push
     this.connect(push, this.me.attributes, this.seen)
     this.stopListening(push)
@@ -36,36 +36,40 @@ sortAsc = function(m1, m2){
     var s1 = m1.get('uat'), s2 = m2.get('uat')
     return s1 < s2 ? -1 : s1 > s2 ? 1 : 0;
 },
-readSeen= function(self,userId){
+readSeen= function(self,userId,cb){
+	cb=cb||dummyCB
     store.getItem('seen'+userId,function(err,seen){
-		if(err) return console.error(err)
+		if(err) return cb(err)
 		try{self.seen=JSON.parse(seen)||0}
 		catch(e){self.seen=0}
+		cb(null,self.seen)
 	})
 },
-writeSeen= function(self,userId, seen){
-    store.setItem('seen'+userId, self.seen = seen)
+writeSeen= function(self,userId,seen,cb){
+    store.setItem('seen'+userId, self.seen = seen, cb)
 },
-removeSeen= function(self,userId){
-    store.removeItem('seen'+userId)
+removeSeen= function(self,userId,cb){
+    store.removeItem('seen'+userId,cb)
 },
-readColl= function(self,name, userId){
+readColl= function(self,name,userId,cb){
+	cb=cb||dummyCB
     var coll = self.deps.models[name]
-    if (!userId || !coll) return
+    if (!userId || !coll) return cb()
 	store.getItem(name+userId,function(err,json){
-		if(err) return console.error(err)
-		if(!json) return
+		if(err) return cb(err)
+		if(!json) return cb()
 		try{ coll.add(JSON.parse(json)) }
-		catch(exp){ return console.error(exp) }
+		catch(exp){ return cb(exp) }
+		cb(null,coll)
 	})
 },
-writeColl= function(self,name, userId){
+writeColl= function(self,name,userId,cb){
     var coll = self.deps.models[name]
-    if (!userId || !coll || !coll.length) return
-    store.setItem(name+userId, JSON.stringify(coll.toJSON()))
+    if (!userId || !coll || !coll.length) return cb()
+    store.setItem(name+userId, JSON.stringify(coll.toJSON()),cb)
 },
-removeColl= function(self,name, userId){
-    store.removeItem(name+userId)
+removeColl= function(self,name,userId,cb){
+    store.removeItem(name+userId,cb)
 }
 
 return{
@@ -84,12 +88,11 @@ return{
     slots:{
         signin: function(from, sender, model){
             if(this.me && this.me.id)this.slots.signout.call(this)
-            var userId = model.id
+            var
+			self=this,
+			userId = model.id
 
             this.me=model 
-            readSeen(this,userId)
-
-            reconn.call(this)
 
             for(var i=0,models=this.deps.models,keys=Object.keys(models),k,d; k=keys[i]; i++){
                 readColl(this,k, userId)
@@ -98,6 +101,11 @@ return{
                 this.listenTo(d, 'remove', writeData)
                 this.listenTo(d, 'change', writeData)
             }
+
+            readSeen(this,userId,function(err){
+				if (err) return console.error(err)
+				reconn.call(self)
+			})
         },
         signout: function(){
 			if (!this.me) return
@@ -139,5 +147,6 @@ return{
         stream.reconnect()
     },
     retry: function(count){
+		return 10 > count ? 1 : 0
     }
 }
