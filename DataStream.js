@@ -144,7 +144,7 @@ return{
     addSSEEvents: function(){
     },
     connect: function(stream, model, seen, count){
-        stream.reconnect()
+        stream.reconnect({t:this.seen})
     },
     retry: function(count){
 		return 10 > count ? 1 : 0
