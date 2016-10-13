@@ -7,20 +7,20 @@ addRemove = function(coll, list){
     coll.add(list, merge1)
     return true
 },
-writeData = function(model){ writeColl(this, model.collection.name, this.me.id) },
+writeData = function(model){ writeColl(this, model.collection.name, this.cred.id) },
 sseCB=function(raw){
-	var userId = this.me.id
+	var userId = this.cred.id
 	if (!userId) return
-	writeSeen(this, userId, raw.seen)
+	writeSeen(this, userId, raw.t)
 	var models=this.deps.models
 	for(var i=0,keys=Object.keys(raw),k; k=keys[i]; i++){
 		addRemove(models[k],raw[k])
 	}
 },
 reconn=function(count){
-    if (!this.retry(count||0) || !this.me) return
+    if (!this.retry(count||0) || !this.cred) return
     var push=this.deps.push
-    this.connect(push, this.me.attributes, this.seen)
+    this.connect(push, this.cred.attributes, this.seen)
     this.stopListening(push)
     this.listenTo(push, 'closed', reconn) // when server side shutdown connect
     this.listenTo(push, 'connecting', this.retry)// when client cant react server
@@ -87,12 +87,12 @@ return{
 
     slots:{
         signin: function(from, sender, model){
-            if(this.me && this.me.id)this.slots.signout.call(this)
+            if(this.cred && this.cred.id)this.slots.signout.call(this)
             var
 			self=this,
 			userId = model.id
 
-            this.me=model 
+            this.cred=model 
 
             for(var i=0,models=this.deps.models,keys=Object.keys(models),k,d; k=keys[i]; i++){
                 readColl(this,k, userId)
@@ -108,10 +108,10 @@ return{
 			})
         },
         signout: function(){
-			if (!this.me) return
+			if (!this.cred) return
 			this.deps.push.close()
             this.stopListening()
-			var userId=this.me.id
+			var userId=this.cred.id
 
             for(var i=0,models=this.deps.models,keys=Object.keys(models),k; k=keys[i]; i++){
                 models[k].reset()
@@ -119,11 +119,11 @@ return{
 			store.clear()
 
             this.seen = 0
-            this.me= null
+            this.cred= null
         },
         refreshCache: function(){
-			if (!this.me) return
-            var userId = this.me.id
+			if (!this.cred) return
+            var userId = this.cred.id
 
             for(var i=0,models=this.deps.models,keys=Object.keys(models),k; k=keys[i]; i++){
                 models[k].reset()
