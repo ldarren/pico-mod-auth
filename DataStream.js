@@ -18,7 +18,7 @@ sseCB=function(raw){
 	}
 },
 reconn=function(count){
-    if (!this.retry(count||0) || !this.cred) return
+    if (!this.retry(count||0) || !this.cred || !this.cred.id) return
     var push=this.deps.push
     this.connect(push, this.cred.attributes, this.seen)
     this.stopListening(push)
@@ -64,6 +64,7 @@ readColl= function(self,name,userId,cb){
 	})
 },
 writeColl= function(self,name,userId,cb){
+	cb=cb||dummyCB
     var coll = self.deps.models[name]
     if (!userId || !coll || !coll.length) return cb()
     store.setItem(name+userId, JSON.stringify(coll.toJSON()),cb)
