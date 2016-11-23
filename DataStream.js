@@ -1,4 +1,5 @@
 var
+Max=Math.max,
 store=__.store(),
 merge1={merge:true},
 dummyCB=function(err){if(err)return console.error(err)},
@@ -18,15 +19,18 @@ sseCB=function(raw){
 	}
 },
 reconn=function(count){
-    if (!this.retry(count||0) || !this.cred || !this.cred.id) return
+    var cred=this.cred
+    if (!this.retry(count||0) || !cred || !cred.id) return
     var push=this.deps.push
-    this.connect(push, this.cred.attributes, this.seen)
     this.stopListening(push)
     this.listenTo(push, 'closed', reconn) // when server side shutdown connect
     this.listenTo(push, 'connecting', this.retry)// when client cant react server
-    for(var i=0,evts=this.deps.push.events,e; e=evts[i]; i++){
+    for(var i=0,evts=push.events,e; e=evts[i]; i++){
         this.listenTo(push, e, sseCB)
     }
+	setTimeout(function(self){
+		self.connect(push, cred.attributes, self.seen, count)
+	},Max(count*10000,300000),this)
 },
 sortDesc = function(m1, m2){
     var s1 = m1.get('uat'), s2 = m2.get('uat')
@@ -145,9 +149,9 @@ return{
     addSSEEvents: function(){
     },
     connect: function(stream, model, seen, count){
-        stream.reconnect({t:this.seen})
+        stream.reconnect({t:seen})
     },
     retry: function(count){
-		return 10 > count ? 1 : 0
+		return 1
     }
 }
