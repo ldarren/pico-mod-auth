@@ -1,5 +1,5 @@
 var
-Max=Math.max,
+Min=Math.min,
 store=__.store(),
 merge1={merge:true},
 dummyCB=function(err){if(err)return console.error(err)},
@@ -30,7 +30,7 @@ reconn=function(count){
     }
 	setTimeout(function(self){
 		self.connect(push, cred.attributes, self.seen, count)
-	},Max(count*10000,300000),this)
+	},Min(count*10000,300000),this)
 },
 sortDesc = function(m1, m2){
     var s1 = m1.get('uat'), s2 = m2.get('uat')

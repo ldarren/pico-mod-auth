@@ -3,9 +3,15 @@ Router = require('js/Router'),
 network = require('js/network'),
 store = __.store(),
 changed=function(model){
-    var cred = this.credential(model.attributes)
+    var cred = this.credential(model)
     network.credential(cred) 
     store.setItem('credential', JSON.stringify(cred))
+},
+uncache = function(){
+    store.removeItem('credential')
+	network.credential(this.credential()) // credential can be mixed
+	if (this.deps.forceAuth) this.signals.signout().send()
+	else startApp(this)
 },
 cache = function(model, coll){
     changed.call(this, model)
@@ -24,12 +30,6 @@ cache = function(model, coll){
     }
     this.addUser(model.id, users, userReady)
 },
-uncache = function(){
-    store.removeItem('credential')
-	network.credential(this.credential({})) // credential can be mixed
-	if (this.deps.forceAuth) this.signals.signout().send()
-	else startApp(this)
-},      
 userReady = function(err, user, self){
     if (err) return console.error(err)
     if (!user) return console.error('user not found')
@@ -89,7 +89,8 @@ return{
             cb(err, model, self)
         })
     },
-    credential: function(att){
-        return {id:att.id, sess:att.sess}
+    credential: function(model){
+		if (!model) return {}
+        return model.attributes
     }
 }
