@@ -23,6 +23,7 @@ reconn=function(count){
     if (!this.retry(count||0) || !cred || !cred.id) return
     var push=this.deps.push
     this.stopListening(push)
+    this.listenTo(push, 'error', this.error) // when server side error 
     this.listenTo(push, 'closed', reconn) // when server side shutdown connect
     this.listenTo(push, 'connecting', this.retry)// when client cant react server
     for(var i=0,evts=push.events,e; e=evts[i]; i++){
@@ -151,6 +152,11 @@ return{
     connect: function(stream, model, seen, count){
         stream.reconnect({t:seen})
     },
+	error: function(data){
+		if (!this.cred) return console.error(data)
+		if (403===data[0]) return this.cred.collection.reset()
+		console.error(data)
+	},
     retry: function(count){
 		return 1
     }
