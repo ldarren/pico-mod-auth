@@ -8,10 +8,10 @@ addRemove = function(coll, list){
     coll.add(list, merge1)
     return true
 },
-writeData = function(model){ writeColl(this, model.collection.name, this.cred.id) },
+writeData = function(model){ writeColl(this, model.collection.name, this.cred.at(0).id) },
 sseCB=function(raw){
-	var userId = this.cred.id
-	if (!userId) return
+	if (!this.cred)return
+	var userId = this.cred.at(0).id
 	writeSeen(this, userId, raw.t)
 	var models=this.deps.models
 	for(var i=0,keys=Object.keys(raw),k; k=keys[i]; i++){
@@ -19,7 +19,7 @@ sseCB=function(raw){
 	}
 },
 reconn=function(count){
-    var cred=this.cred
+    var cred=this.cred.at(0)
     if (!this.retry(count||0) || !cred || !cred.id) return
     var push=this.deps.push
     this.stopListening(push)
@@ -93,12 +93,12 @@ return{
 
     slots:{
         signin: function(from, sender, model){
-            if(this.cred && this.cred.id)this.slots.signout.call(this)
+            if(this.cred && this.cred.at(0).id)this.slots.signout.call(this)
             var
 			self=this,
 			userId = model.id
 
-            this.cred=model 
+            this.cred=model.collection
 
             for(var i=0,models=this.deps.models,keys=Object.keys(models),k,d; k=keys[i]; i++){
                 readColl(this,k, userId)
@@ -117,7 +117,6 @@ return{
 			if (!this.cred) return
 			this.deps.push.close()
             this.stopListening()
-			var userId=this.cred.id
 
             for(var i=0,models=this.deps.models,keys=Object.keys(models),k; k=keys[i]; i++){
                 models[k].reset()
@@ -129,7 +128,7 @@ return{
         },
         refreshCache: function(){
 			if (!this.cred) return
-            var userId = this.cred.id
+            var userId = this.cred.at(0).id
 
             for(var i=0,models=this.deps.models,keys=Object.keys(models),k; k=keys[i]; i++){
                 models[k].reset()
@@ -154,7 +153,7 @@ return{
     },
 	error: function(data){
 		if (!this.cred) return console.error(data)
-		if (403===data[0]) return this.cred.collection.reset()
+		if (403===data[0]) return this.cred.reset()
 		console.error(data)
 	},
     retry: function(count){
