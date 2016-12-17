@@ -49,7 +49,7 @@ startApp=function(self){
     self.modelReadied= true
 },
 onNetworkError= function(err){
-	if (403 === err.code) this.deps.credential.reset()
+	if (403 === err[0]) this.deps.credential.reset()
 }
 
 return{
