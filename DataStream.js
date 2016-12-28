@@ -8,7 +8,10 @@ addRemove = function(coll, list){
     coll.add(list, merge1)
     return true
 },
-writeData = function(model){ writeColl(this, model.collection.name, this.cred.at(0).id) },
+writeData = function(model){
+	if (!this.cred || !this.cred.length) return
+	writeColl(this, model.collection.name, this.cred.at(0).id)
+},
 sseCB=function(raw){
 	if (!this.cred)return
 	var userId = this.cred.at(0).id
@@ -154,7 +157,9 @@ return{
     },
 	error: function(data){
 		if (!this.cred) return console.error(data)
-		if (403===data[0]) return this.cred.reset()
+		if (403!==data[0]) return
+		this.cred.reset()
+		this.deps.push.close()
 		console.error(data)
 	},
     retry: function(count){
