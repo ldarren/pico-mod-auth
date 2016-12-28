@@ -118,8 +118,9 @@ return{
 			this.deps.push.close()
             this.stopListening()
 
-            for(var i=0,models=this.deps.models,keys=Object.keys(models),k; k=keys[i]; i++){
-                models[k].reset()
+            for(var i=0,models=this.deps.models,keys=Object.keys(models),c=this.cred,m; m=models[keys[i]]; i++){
+				if (c===m) continue
+                m.reset()
             }
 			store.clear()
 
