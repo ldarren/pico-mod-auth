@@ -10,8 +10,8 @@ changed=function(model){
 uncache = function(){
     store.removeItem('credential')
 	network.credential(this.credential()) // credential can be mixed
-	if (this.deps.forceAuth) this.signals.signout().send()
-	else startApp(this)
+	this.signals.signout().send()
+	if (!this.deps.forceAuth) startApp(this)
 },
 cache = function(model, coll){
     changed.call(this, model)

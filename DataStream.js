@@ -96,7 +96,7 @@ return{
 
     slots:{
         signin: function(from, sender, model){
-            if(this.cred && this.cred.at(0).id)this.slots.signout.call(this)
+            //if(this.cred && this.cred.at(0).id)this.slots.signout.call(this)
             var
 			self=this,
 			userId = model.id
