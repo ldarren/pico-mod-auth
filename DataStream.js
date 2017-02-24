@@ -10,7 +10,7 @@ addRemove = function(coll, list){
 },
 writeData = function(model){
 	if (!this.cred || !this.cred.length) return
-	writeColl(this, model.collection.name, this.cred.at(0).id)
+	model.collection.save(this.cred.at(0).id)
 },
 sseCB=function(raw){
 	if (!this.cred)return
@@ -58,27 +58,6 @@ writeSeen= function(self,userId,seen,cb){
 },
 removeSeen= function(self,userId,cb){
     store.removeItem('seen'+userId,cb)
-},
-readColl= function(self,name,userId,cb){
-	cb=cb||dummyCB
-    var coll = self.deps.models[name]
-    if (!userId || !coll) return cb()
-	store.getItem(name+userId,function(err,json){
-		if(err) return cb(err)
-		if(!json) return cb()
-		try{ coll.add(JSON.parse(json)) }
-		catch(exp){ return cb(exp) }
-		cb(null,coll)
-	})
-},
-writeColl= function(self,name,userId,cb){
-	cb=cb||dummyCB
-    var coll = self.deps.models[name]
-    if (!userId || !coll || !coll.length) return cb()
-    store.setItem(name+userId, JSON.stringify(coll.toJSON()),cb)
-},
-removeColl= function(self,name,userId,cb){
-    store.removeItem(name+userId,cb)
 }
 
 return{
@@ -104,8 +83,8 @@ return{
             this.cred=model.collection
 
             for(var i=0,models=this.deps.models,keys=Object.keys(models),k,d; k=keys[i]; i++){
-                readColl(this,k, userId)
                 d=models[k]
+                d.load(userId)
                 this.listenTo(d, 'add', writeData)
                 this.listenTo(d, 'remove', writeData)
                 this.listenTo(d, 'change', writeData)
@@ -134,9 +113,10 @@ return{
 			if (!this.cred) return
             var userId = this.cred.at(0).id
 
-            for(var i=0,models=this.deps.models,keys=Object.keys(models),k; k=keys[i]; i++){
-                models[k].reset()
-                removeColl(this,k, userId)
+            for(var i=0,models=this.deps.models,keys=Object.keys(models),k,d; k=keys[i]; i++){
+                d=models[k]
+                d.reset()
+				d.unsave(userId)
             }
 
             removeSeen(this,userId)
